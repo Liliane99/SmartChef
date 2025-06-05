@@ -20,9 +20,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
       },
     });
-    console.log("Authorization header:", `Bearer ${AIRTABLE_API_KEY}`);
-
-
+    
     const data = await res.json();
     const record = data.records[0];
 
@@ -58,3 +56,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function GET(request: Request) {
+    try {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("token");
+  
+      if (!token) {
+        return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+      }
+  
+      if (!JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined in environment variables");
+      }
+  
+      
+      jwt.verify(token.value, JWT_SECRET);
+  
+      
+      const res = await fetch(AIRTABLE_API_URL, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        },
+      });
+  
+      if (!res.ok) {
+        return NextResponse.json({ error: "Failed to fetch users from Airtable" }, { status: res.status });
+      }
+  
+      const data = await res.json();
+  
+      
+      return NextResponse.json({ users: data.records });
+    } catch (error) {
+      console.error(error);
+      return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+  }
+  
