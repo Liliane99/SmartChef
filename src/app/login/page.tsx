@@ -170,7 +170,7 @@ export default function LoginPage() {
           <div className="text-center pt-4">
             <p className="text-muted-foreground">
               Pas encore de compte ?{' '}
-              <Button variant="link" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold">
+              <Button onClick={() => window.location.href = "/register"} variant="link" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold">
                 Créer un compte
               </Button>
             </p>
