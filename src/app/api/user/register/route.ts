@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER } = process.env;
+const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER, JWT_SECRET } = process.env;
 const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}`;
 const AIRTABLE_ALLERGY_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/allergy`;
 
@@ -10,6 +11,11 @@ export async function POST(request: Request) {
     const { email, password, username, intolerances } = await request.json();
 
     if (!email || !password || !username) {
+      const token = jwt.sign(
+        { email, username },
+        JWT_SECRET as string,
+        { expiresIn: "7d" }
+      );
       return NextResponse.json(
         { error: "Email, password and username are required" },
         { status: 400 }
@@ -73,8 +79,14 @@ export async function POST(request: Request) {
 
     const createdUser = await createRes.json();
 
+    const token = jwt.sign(
+      { id: createdUser.id, email, username },
+      JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
+
     return NextResponse.json(
-      { message: "User registered successfully", userId: createdUser.id },
+      { message: "User registered successfully", userId: createdUser.id, token },
       { status: 201 }
     );
   } catch (error) {

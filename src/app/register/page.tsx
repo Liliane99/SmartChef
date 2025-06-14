@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ChefHat, Mail, Lock, Eye, EyeOff, User, Calendar, Check, X } from 'lucide-react';
 import Navbar from '@/components/navbar';
+import Cookies from 'js-cookie';
 
 interface FormData {
   firstName: string;
@@ -81,7 +82,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
-
+  
     try {
       const response = await fetch('/api/user/register', {
         method: 'POST',
@@ -94,16 +95,28 @@ export default function RegisterPage() {
           username: formData.firstName
         })
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.message || 'Une erreur est survenue.');
         return;
       }
-
+  
       const result = await response.json();
-      console.log('Inscription réussie:', result);
-      window.location.href = '/login'; 
+  
+      
+      if (result.token) {
+        Cookies.set('token', result.token, {
+          expires: 7,
+          path: '/',
+          secure: true,
+          sameSite: 'Lax'
+        });
+        window.location.href = '/selectAllergies';
+      } else {
+        setError("Le token est manquant dans la réponse du serveur.");
+      }
+  
     } catch (err) {
       console.error('Erreur lors de l’inscription:', err);
       setError("Erreur de réseau ou serveur.");
