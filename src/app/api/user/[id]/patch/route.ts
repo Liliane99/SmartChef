@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER } = process.env;
-const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}`;
 
+const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}`;
+const AIRTABLE_ALLERGY_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/allergy`;
 
 export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
@@ -13,15 +15,40 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
       throw new Error("API keys or base ID are not defined in environment variables");
     }
 
-    
-    if (!body.username) {
-      return NextResponse.json(
-        { error: "This field can't be changed" },
-        { status: 400 }
-      );
+    const fields: Record<string, any> = {};
+
+    if (body.username) {
+      fields.username = body.username;
     }
 
-    const fields = { username: body.username };
+    if (body.email) {
+      fields.email = body.email;
+    }
+
+    if (body.password) {
+      const hashedPassword = await bcrypt.hash(body.password, 10);
+      fields.password = hashedPassword;
+    }
+
+    if (Array.isArray(body.intolerances)) {
+      const allergyRes = await fetch(AIRTABLE_ALLERGY_URL, {
+        headers: {
+          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
+        },
+      });
+
+      const allergyData = await allergyRes.json();
+
+      const intoleranceIds = allergyData.records
+        .filter((record: any) => body.intolerances.includes(record.fields.label))
+        .map((record: any) => record.id);
+
+      fields.intolerances = intoleranceIds;
+    }
+
+    if (Object.keys(fields).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
+    }
 
     const airtableRes = await fetch(`${AIRTABLE_API_URL}/${id}`, {
       method: "PATCH",
@@ -38,15 +65,11 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
       return NextResponse.json({ error: errorData }, { status: airtableRes.status });
     }
 
-    const data = await airtableRes.json();
-    return NextResponse.json(data, { status: 200 });
+    const updatedUser = await airtableRes.json();
+    return NextResponse.json(updatedUser, { status: 200 });
 
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ error: "Error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
-
-
-  
