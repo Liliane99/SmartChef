@@ -142,14 +142,18 @@ const ProfilePage = () => {
   };
 
   const addCommonAllergy = (allergy: string) => {
+    if (!isEditing) return;
     if (!allergies.includes(allergy)) {
       setAllergies([...allergies, allergy]);
     }
   };
+  
 
   const removeAllergy = (allergyToRemove: string) => {
+    if (!isEditing) return;
     setAllergies(allergies.filter((a) => a !== allergyToRemove));
   };
+  
 
   if (loading) {
     return <div className="p-8">Chargement...</div>;
@@ -310,9 +314,11 @@ const ProfilePage = () => {
                             size="sm"
                             onClick={() => removeAllergy(allergy)}
                             className="ml-2 h-auto p-0"
+                            disabled={!isEditing}
                           >
                             <X className="w-3 h-3" />
                           </Button>
+
                         </Badge>
                       ))}
                     </div>
@@ -330,18 +336,19 @@ const ProfilePage = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {commonAllergies.map((allergy) => (
                       <Button
-                        key={allergy}
-                        variant="outline"
-                        onClick={() => addCommonAllergy(allergy)}
-                        disabled={allergies.includes(allergy)}
-                        className={`p-3 h-auto justify-center ${
-                          allergies.includes(allergy)
-                            ? "bg-accent-pink border-primary text-primary opacity-60"
-                            : "hover:border-primary hover:bg-accent-pink hover:text-primary"
-                        }`}
-                      >
-                        {allergy}
-                      </Button>
+                      key={allergy}
+                      variant="outline"
+                      onClick={() => addCommonAllergy(allergy)}
+                      disabled={!isEditing || allergies.includes(allergy)}
+                      className={`p-3 h-auto justify-center transition-all ${
+                        allergies.includes(allergy)
+                          ? "bg-accent-pink border-primary text-primary opacity-60"
+                          : "hover:border-primary hover:bg-accent-pink hover:text-primary"
+                      } ${!isEditing ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {allergy}
+                    </Button>
+                    
                     ))}
                   </div>
                 </div>
