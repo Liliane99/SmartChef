@@ -22,7 +22,7 @@ const Navbar = () => {
 
   const navItems = [
     { name: 'Accueil', href: '/', icon: Home },
-    { name: 'Recettes', href: '/', icon: ChefHat },
+    { name: 'Recettes', href: '/recipes', icon: ChefHat },
   ];
 
   return (
@@ -85,11 +85,11 @@ const Navbar = () => {
               
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-0 translate-y-2">
                 <div className="py-2">
-                  <a href="#profile" className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                  <a href="/login" className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <LogIn className="w-4 h-4" />
                     <span>Se connecter</span>
                   </a>
-                  <a href="#settings" className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
+                  <a href="/register" className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <User2 className="w-4 h-4" />
                     <span>Crée un compte</span>
                   </a>
