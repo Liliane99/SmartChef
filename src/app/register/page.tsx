@@ -10,6 +10,9 @@ import { Separator } from '@/components/ui/separator';
 import { ChefHat, Mail, Lock, Eye, EyeOff, User, Calendar, Check, X } from 'lucide-react';
 import Navbar from '@/components/navbar';
 import Cookies from 'js-cookie';
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "@/lib/firebaseConfig";
+
 
 interface FormData {
   firstName: string;
@@ -130,6 +133,46 @@ export default function RegisterPage() {
     passwordStrength.score >= 4 &&
     passwordsMatch &&
     formData.acceptTerms;
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+  
+      const token = await user.getIdToken();
+  
+      const response = await fetch('/api/user/register/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: user.email,
+          username: user.displayName,
+        }),
+      });
+  
+      const data = await response.json();
+  
+      if (data.token) {
+        Cookies.set('token', data.token, {
+          expires: 7,
+          path: '/',
+          secure: true,
+          sameSite: 'Lax',
+        });
+        window.location.href = '/selectAllergies';
+      } else {
+        setError("Le token est manquant dans la réponse du serveur.");
+      }
+  
+    } catch (err) {
+      console.error("Google Sign-In Error:", err);
+      setError("Erreur avec Google Sign-In.");
+    }
+  };
+    
 
   return (
     <>
@@ -333,10 +376,11 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
-              >
+            <Button 
+              variant="outline" 
+              className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
+              onClick={handleGoogleSignIn}
+            >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.97 20.99 7.69 23 12 23z"/>

@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ChefHat, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Navbar from '@/components/navbar';
+import { auth, provider, signInWithPopup } from "@/lib/firebaseConfig";
 
 interface FormData {
   email: string;
@@ -56,6 +57,33 @@ export default function LoginPage() {
       setError(err.message);
     }
   };
+  
+  const handleGoogleLogin = async () => {
+    setError(null);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+  
+      const res = await fetch("/api/user/auth/google", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+  
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erreur lors de la connexion avec Google.");
+      }
+  
+      router.push("/profil");
+    } catch (err: any) {
+      console.error("Erreur Google login:", err);
+      setError(err.message);
+    }
+  };
+  
+  
 
   return (
     <>
@@ -137,21 +165,6 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked: boolean) =>
-                      setFormData(prev => ({ ...prev, rememberMe: checked }))
-                    }
-                  />
-                  <Label
-                    htmlFor="remember"
-                    className="text-sm text-muted-foreground cursor-pointer"
-                  >
-                    Se souvenir de moi
-                  </Label>
-                </div>
                 <Button
                   variant="link"
                   className="p-0 h-auto text-primary hover:text-primary/80"
@@ -179,6 +192,7 @@ export default function LoginPage() {
               <Button
                 variant="outline"
                 className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
+                onClick={handleGoogleLogin}
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path
