@@ -9,9 +9,10 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const Sidebar = ({ activeSection = 'profile', onSectionChange }: { activeSection?: string; onSectionChange?: (sectionId: string) => void }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, _setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navigationItems = [
@@ -19,6 +20,7 @@ const Sidebar = ({ activeSection = 'profile', onSectionChange }: { activeSection
       id: 'profile',
       label: 'Mon Profil',
       icon: User,
+      path: "/profil",
       description: 'Gérer mes informations',
       badge: null
     },
@@ -26,6 +28,7 @@ const Sidebar = ({ activeSection = 'profile', onSectionChange }: { activeSection
       id: 'generate',
       label: 'Générer une Recette',
       icon: ChefHat,
+      path: "/generate-recipe",
       description: 'Créer de nouvelles recettes',
       badge: null
     },
@@ -33,15 +36,16 @@ const Sidebar = ({ activeSection = 'profile', onSectionChange }: { activeSection
       id: 'history',
       label: 'Historique',
       icon: History,
+      path: "/history-recipes",
       description: 'Mes recettes sauvegardées',
       badge: '12'
     }
   ];
 
-const handleSectionChange = (sectionId: string): void => {
+  const handleSectionChange = (sectionId: string): void => {
     onSectionChange?.(sectionId);
     setIsMobileOpen(false);
-};
+  };
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
@@ -61,15 +65,14 @@ const handleSectionChange = (sectionId: string): void => {
         </div>
       </div>
       <nav className="flex-1 p-4">
-        <div className="space-y-2">
-          <div className="mb-4">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeSection === item.id;
-              
-              return (
+        <div className="space-y-2 mb-4">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+
+            return (
+              <Link key={item.id} href={item.path} passHref>
                 <Button
-                  key={item.id}
                   variant="ghost"
                   onClick={() => handleSectionChange(item.id)}
                   className={`w-full justify-start p-3 h-auto ${
@@ -96,17 +99,28 @@ const handleSectionChange = (sectionId: string): void => {
                     </div>
                   )}
                 </Button>
-              );
-            })}
-          </div>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
-      
       <div className="p-4 border-t border-sidebar-border">
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+          onClick={async () => {
+            try {
+              const res = await fetch('/api/user/logout', { method: 'POST' });
+              if (res.ok) {
+                window.location.href = '/login';
+              } else {
+                console.error('Erreur lors de la déconnexion');
+              }
+            } catch (err) {
+              console.error('Erreur réseau de déconnexion :', err);
+            }
+          }}
         >
           <LogOut className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
           {!isCollapsed && 'Déconnexion'}
@@ -117,7 +131,6 @@ const handleSectionChange = (sectionId: string): void => {
 
   return (
     <>
-      
       <Button
         variant="ghost"
         size="sm"
@@ -127,12 +140,10 @@ const handleSectionChange = (sectionId: string): void => {
         <Menu className="w-5 h-5" />
       </Button>
 
-      
       <div className={`hidden lg:flex flex-col h-screen ${isCollapsed ? 'w-16' : 'w-80'} transition-all duration-300`}>
         <SidebarContent />
       </div>
 
-      
       {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileOpen(false)} />
@@ -154,6 +165,5 @@ const handleSectionChange = (sectionId: string): void => {
     </>
   );
 };
-
 
 export default Sidebar;

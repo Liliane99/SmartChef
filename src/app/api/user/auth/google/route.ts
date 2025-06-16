@@ -1,4 +1,3 @@
-// app/api/user/login/google/route.ts
 import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/firebase-admin";
 import jwt from "jsonwebtoken";
