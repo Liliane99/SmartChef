@@ -26,7 +26,7 @@ import Sidebar from "@/components/sidebar";
 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -34,23 +34,25 @@ const ProfilePage = () => {
     avatar: "/api/placeholder/120/120",
   });
   const [allergies, setAllergies] = useState<string[]>([]);
-  const [commonAllergies, setCommonAllergies] = useState<string[]>([]);
+  const [commonAllergies, setCommonAllergies] = useState<{ id: string, label: string }[]>([]);
 
   const getCookie = (name: string) => {
     const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
     return match ? decodeURIComponent(match[2]) : null;
   };
 
+  const handleClose = () => {
+    window.location.href = "/recipes";
+  };
+
   useEffect(() => {
     const token = getCookie("token");
 
-    
     if (!token) {
       window.location.href = "/login";
       return;
     }
 
-    
     const fetchUserProfile = async () => {
       try {
         const userRes = await fetch("/api/me", {
@@ -82,8 +84,11 @@ const ProfilePage = () => {
           },
         });
         const data = await res.json();
-        const labels = data.users.map((r: any) => r.fields.label);
-        setCommonAllergies(labels);
+        const allergiesData = data.users.map((r: any) => ({
+          id: r.id,
+          label: r.fields.label
+        }));
+        setCommonAllergies(allergiesData);
       } catch (err) {
         console.error("Erreur chargement allergies:", err);
       }
@@ -92,7 +97,6 @@ const ProfilePage = () => {
     const load = async () => {
       await fetchUserProfile();
       await fetchAllAllergies();
-      setLoading(false);
     };
 
     load();
@@ -147,27 +151,30 @@ const ProfilePage = () => {
       setAllergies([...allergies, allergy]);
     }
   };
-  
 
   const removeAllergy = (allergyToRemove: string) => {
     if (!isEditing) return;
     setAllergies(allergies.filter((a) => a !== allergyToRemove));
   };
-  
-
-  if (loading) {
-    return <div className="p-8">Chargement...</div>;
-  }
 
   return (
     <div className="flex">
       <div className="fixed top-0 left-0 h-screen w-64 border-r bg-background z-50">
         <Sidebar />
       </div>
-      <div className="ml-64 w-full h-screen overflow-y-auto bg-background p-4 md:p-8">
+      <div className="ml-64 w-full h-screen overflow-y-auto bg-background p-4 md:p-8 relative">
+        <Button
+          onClick={handleClose}
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full p-0 hover:bg-destructive/10 hover:text-destructive"
+        >
+          <X className="w-5 h-5" />
+        </Button>
+
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between pr-12">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Mon Profil</h1>
                 <p className="text-muted-foreground">
@@ -220,9 +227,7 @@ const ProfilePage = () => {
                         {isEditing ? (
                           <Input
                             value={profile.name}
-                            onChange={(e) =>
-                              setProfile({ ...profile, name: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, name: e.target.value })}
                           />
                         ) : (
                           <p className="py-2 font-medium">{profile.name}</p>
@@ -234,9 +239,7 @@ const ProfilePage = () => {
                           <Input
                             type="email"
                             value={profile.email}
-                            onChange={(e) =>
-                              setProfile({ ...profile, email: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                           />
                         ) : (
                           <div className="py-2 flex items-center gap-2">
@@ -251,9 +254,7 @@ const ProfilePage = () => {
                           <Input
                             type="password"
                             value={profile.password}
-                            onChange={(e) =>
-                              setProfile({ ...profile, password: e.target.value })
-                            }
+                            onChange={(e) => setProfile({ ...profile, password: e.target.value })}
                           />
                         ) : (
                           <div className="py-2 flex items-center gap-2">
@@ -303,24 +304,25 @@ const ProfilePage = () => {
                   <h3 className="font-medium mb-3">Allergies déclarées</h3>
                   {allergies.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
-                      {allergies.map((allergy, index) => (
-                        <Badge
-                          key={index}
-                          className="bg-accent-pink text-primary border border-primary/20"
-                        >
-                          {allergy}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeAllergy(allergy)}
-                            className="ml-2 h-auto p-0"
-                            disabled={!isEditing}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
+                        {allergies.map((allergyId, index) => {
+                          const allergyObj = commonAllergies.find(a => a.id === allergyId);
+                          const label = allergyObj ? allergyObj.label : allergyId; 
+                          return (
+                            <Badge key={index} className="bg-accent-pink text-primary border border-primary/20">
+                              {label}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeAllergy(allergyId)}
+                                className="ml-2 h-auto p-0"
+                                disabled={!isEditing}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </Badge>
+                          );
+                        })}
 
-                        </Badge>
-                      ))}
                     </div>
                   ) : (
                     <p className="text-muted-foreground">
@@ -336,19 +338,18 @@ const ProfilePage = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {commonAllergies.map((allergy) => (
                       <Button
-                      key={allergy}
-                      variant="outline"
-                      onClick={() => addCommonAllergy(allergy)}
-                      disabled={!isEditing || allergies.includes(allergy)}
-                      className={`p-3 h-auto justify-center transition-all ${
-                        allergies.includes(allergy)
-                          ? "bg-accent-pink border-primary text-primary opacity-60"
-                          : "hover:border-primary hover:bg-accent-pink hover:text-primary"
-                      } ${!isEditing ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      {allergy}
-                    </Button>
-                    
+                        key={allergy.id}
+                        variant="outline"
+                        onClick={() => addCommonAllergy(allergy.label)}
+                        disabled={!isEditing || allergies.includes(allergy.label)}
+                        className={`p-3 h-auto justify-center transition-all ${
+                          allergies.includes(allergy.label)
+                            ? "bg-accent-pink border-primary text-primary opacity-60"
+                            : "hover:border-primary hover:bg-accent-pink hover:text-primary"
+                        } ${!isEditing ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        {allergy.label}
+                      </Button>
                     ))}
                   </div>
                 </div>

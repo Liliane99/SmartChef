@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { 
   User, 
-  ChefHat, 
-  History, 
+  ChefHat,  
   Menu, 
   X, 
   LogOut
@@ -23,22 +22,6 @@ const Sidebar = ({ activeSection = 'profile', onSectionChange }: { activeSection
       path: "/profil",
       description: 'Gérer mes informations',
       badge: null
-    },
-    {
-      id: 'generate',
-      label: 'Générer une Recette',
-      icon: ChefHat,
-      path: "/generate-recipe",
-      description: 'Créer de nouvelles recettes',
-      badge: null
-    },
-    {
-      id: 'history',
-      label: 'Historique',
-      icon: History,
-      path: "/history-recipes",
-      description: 'Mes recettes sauvegardées',
-      badge: '12'
     }
   ];
 
