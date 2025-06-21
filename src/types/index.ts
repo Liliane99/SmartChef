@@ -22,7 +22,7 @@ export interface Recipe {
   cookTime: number;
   nutrition: Nutrition;
   type: string;
-  createdAt: string; // ou Date si tu veux faire une conversion avant
+  createdAt: string;
   isPublished: boolean
 }
 
