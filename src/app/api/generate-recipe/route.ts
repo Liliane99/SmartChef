@@ -77,7 +77,6 @@ export async function POST(req: NextRequest) {
     const prompt = `
 Tu es un chef cuisinier français.
 Crée une recette uniquement avec les ingrédients suivants : ${filteredIngredients.join(', ')}.
-Tu ne dois utiliser aucun autre ingrédient, même basique (ex: sel, poivre, ail, oignon, huile, beurre, etc) s'il n'est pas listé.
 Le plat est une ${type}. Prépare la recette pour ${portion} personnes.
 Les allergies à éviter sont : ${totalAllergies.join(', ')}.
 
