@@ -7,9 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { ChefHat, Mail, Lock, Eye, EyeOff, User, Calendar, Check, X } from 'lucide-react';
+import { ChefHat, Mail, Lock, Eye, EyeOff, User, Calendar, Check, X, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/navbar';
 import Cookies from 'js-cookie';
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "@/lib/firebaseConfig";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useEffect } from 'react';
+
 
 interface FormData {
   firstName: string;
@@ -24,6 +29,18 @@ interface PasswordStrength {
   feedback: string[];
 }
 
+function AlreadyLoggedInBanner() {
+  return (
+    <Alert className="mb-6 border-green-500 bg-green-50 text-green-800">
+      <ShieldCheck className="h-5 w-5 text-green-600" />
+      <AlertTitle>Vous êtes déjà connecté !</AlertTitle>
+      <AlertDescription>
+         <a href="/profil" className="underline text-green-700">retourner à votre profil</a>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
@@ -36,6 +53,13 @@ export default function RegisterPage() {
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+useEffect(() => {
+  const token = Cookies.get("token");
+  setIsLoggedIn(!!token);
+}, []);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,18 +77,19 @@ export default function RegisterPage() {
       { test: /\d/.test(password), message: "Un chiffre" },
       { test: /[!@#$%^&*(),.?\":{}|<>]/.test(password), message: "Un caractère spécial" }
     ];
-    
     const score = checks.filter(check => check.test).length;
-    const feedback = checks.map(check => ({
-      ...check,
-      passed: check.test
-    }));
-    
-    return { score, feedback: feedback.map(f => f.message) };
+    return { score, feedback: checks.map(c => c.message) };
   };
 
   const passwordStrength = validatePassword(formData.password);
   const passwordsMatch = formData.password === formData.confirmPassword && formData.confirmPassword !== '';
+
+  const isFormValid =
+    formData.firstName.trim() !== '' &&
+    formData.email.trim() !== '' &&
+    passwordStrength.score >= 4 &&
+    passwordsMatch &&
+    formData.acceptTerms;
 
   const getStrengthColor = (score: number) => {
     if (score <= 2) return 'bg-red-500';
@@ -82,7 +107,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async () => {
     if (!isFormValid) return;
-  
     try {
       const response = await fetch('/api/user/register', {
         method: 'POST',
@@ -95,51 +119,69 @@ export default function RegisterPage() {
           username: formData.firstName
         })
       });
-  
       if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.message || 'Une erreur est survenue.');
         return;
       }
-  
       const result = await response.json();
-  
-      
       if (result.token) {
-        Cookies.set('token', result.token, {
-          expires: 7,
-          path: '/',
-          secure: true,
-          sameSite: 'Lax'
-        });
+        Cookies.set('token', result.token, { expires: 7, path: '/', secure: true, sameSite: 'Lax' });
         window.location.href = '/selectAllergies';
       } else {
         setError("Le token est manquant dans la réponse du serveur.");
       }
-  
     } catch (err) {
       console.error('Erreur lors de l’inscription:', err);
       setError("Erreur de réseau ou serveur.");
     }
   };
 
-  
-  const isFormValid = 
-    formData.firstName.trim() !== '' &&
-    formData.email.trim() !== '' &&
-    passwordStrength.score >= 4 &&
-    passwordsMatch &&
-    formData.acceptTerms;
+  const handleGoogleSignIn = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const token = await user.getIdToken();
+      const response = await fetch('/api/user/register/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: user.email,
+          username: user.displayName,
+        }),
+      });
+      const data = await response.json();
+      if (data.token) {
+        Cookies.set('token', data.token, { expires: 7, path: '/', secure: true, sameSite: 'Lax' });
+        window.location.href = '/selectAllergies';
+      } else {
+        setError("Le token est manquant dans la réponse du serveur.");
+      }
+    } catch (err) {
+      console.error("Google Sign-In Error:", err);
+      setError("Erreur avec Google Sign-In.");
+    }
+  };
+
+    
 
   return (
     <>
-      <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-24 h-24 bg-primary/10 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-10 right-10 w-40 h-40 bg-secondary/10 rounded-full animate-pulse delay-1000"></div>
-        <div className="absolute top-1/3 right-1/3 w-20 h-20 bg-accent/10 rounded-full animate-pulse delay-500"></div>
-        <div className="absolute bottom-1/3 left-1/4 w-16 h-16 bg-primary/15 rounded-full animate-pulse delay-700"></div>
+    <Navbar />
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/20 to-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute top-10 left-10 w-24 h-24 bg-primary/10 rounded-full animate-pulse"></div>
+      <div className="absolute bottom-10 right-10 w-40 h-40 bg-secondary/10 rounded-full animate-pulse delay-1000"></div>
+      <div className="absolute top-1/3 right-1/3 w-20 h-20 bg-accent/10 rounded-full animate-pulse delay-500"></div>
+      <div className="absolute bottom-1/3 left-1/4 w-16 h-16 bg-primary/15 rounded-full animate-pulse delay-700"></div>
 
+      {isLoggedIn ? (
+        <div className="w-full max-w-lg">
+          <AlreadyLoggedInBanner />
+        </div>
+      ) : (
         <Card className="w-full max-w-lg shadow-xl border-0 bg-card/95 backdrop-blur-sm my-8">
           <CardHeader className="space-y-4 text-center">
             <div>
@@ -333,10 +375,11 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
-              >
+            <Button 
+              variant="outline" 
+              className="w-full h-12 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300"
+              onClick={handleGoogleSignIn}
+            >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.97 20.99 7.69 23 12 23z"/>
@@ -347,7 +390,8 @@ export default function RegisterPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        )}
       </div>
     </>
   );

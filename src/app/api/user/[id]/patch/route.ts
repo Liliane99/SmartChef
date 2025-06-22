@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER } = process.env;
 
 const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}`;
-const AIRTABLE_ALLERGY_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/allergy`;
 
 export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
   const { id } = context.params;
@@ -31,19 +30,7 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
     }
 
     if (Array.isArray(body.intolerances)) {
-      const allergyRes = await fetch(AIRTABLE_ALLERGY_URL, {
-        headers: {
-          Authorization: `Bearer ${AIRTABLE_API_KEY}`,
-        },
-      });
-
-      const allergyData = await allergyRes.json();
-
-      const intoleranceIds = allergyData.records
-        .filter((record: any) => body.intolerances.includes(record.fields.label))
-        .map((record: any) => record.id);
-
-      fields.intolerances = intoleranceIds;
+      fields.intolerances = body.intolerances;
     }
 
     if (Object.keys(fields).length === 0) {
