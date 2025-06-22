@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "ID utilisateur manquant dans le token." }, { status: 401 });
     }
 
-
     const userUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}/${decoded.id}`;
     const userRes = await fetch(userUrl, {
       headers: { 'Authorization': `Bearer ${AIRTABLE_API_KEY}` }
@@ -40,18 +39,19 @@ export async function POST(req: NextRequest) {
     }
 
     const userData = await userRes.json();
-
     const allergies = userData?.fields?.label_intolerances?.map((a: string) => a.toLowerCase()) || [];
-  
 
-    
     const body = await req.json();
     let { ingredients, portion, type, additionalAllergies } = body;
 
-   
-
     if (!Array.isArray(ingredients) || ingredients.length === 0 || !portion || !type) {
       return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
+    }
+
+    
+    const allowedTypes = ['entrée', 'plat', 'dessert'];
+    if (!allowedTypes.includes(type.toLowerCase())) {
+      return NextResponse.json({ error: `Type de plat invalide. Types autorisés : ${allowedTypes.join(', ')}.` }, { status: 400 });
     }
 
     let extraAllergies: string[] = [];
@@ -60,20 +60,15 @@ export async function POST(req: NextRequest) {
     }
 
     const totalAllergies = [...new Set([...allergies, ...extraAllergies])];
-   
 
-    
     const filteredIngredients = ingredients.filter(ingredient => {
       return !totalAllergies.includes(ingredient.toLowerCase());
     });
-
-    
 
     if (filteredIngredients.length === 0) {
       return NextResponse.json({ error: 'Tous les ingrédients sont allergènes.' }, { status: 400 });
     }
 
-   
     const prompt = `
 Tu es un chef cuisinier français.
 Crée une recette uniquement avec les ingrédients suivants : ${filteredIngredients.join(', ')}.
@@ -95,14 +90,20 @@ Retourne uniquement un JSON strictement valide avec cette structure :
   "title": "Nom de la recette",
   "description": "Brève description",
   "type": "${type}",
-  "ingredients": ["Liste des ingrédients utilisés"],
+  "ingredients": [
+    {
+      "name": "nom de l'ingrédient",
+      "quantity": "quantité de l'ingrédient sans spécifier l'unité (ex: 200, 1, 3 etc.)",
+      "unit": "unité de mesure (ex: g, ml, tasse, pièce etc.) spécifique à l'ingrédient"
+    }
+  ],
   "steps": ["Étape 1", "Étape 2", "..."],
   "servings": ${portion},
   "preparationTime": "Temps de préparation en minutes",
   "cookTime": "Temps de cuisson en minutes",
-  "image": "URL d'une image",
+  "image": "URL d'une image provenant uniquement de Unsplash (https://images.unsplash.com/), Pixabay (https://cdn.pixabay.com/), ou Pexels (https://images.pexels.com/)",
   "tags": ["Origine", "Difficulté", "Végétarien ou Non", "Style"],
-  "allergies": ["${totalAllergies.join('","')}"],
+  "intolerances": ["${totalAllergies.join('","')}"],
   "nutrition": {
     "calories": "xxx kcal",
     "proteins": "xx g",
@@ -117,9 +118,6 @@ Retourne uniquement un JSON strictement valide avec cette structure :
 Ne mets aucun texte avant ou après le JSON.
     `;
 
-   
-
-    
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -143,7 +141,6 @@ Ne mets aucun texte avant ou après le JSON.
     }
 
     const content = data.choices?.[0]?.message?.content;
-    
 
     let recipe;
 
@@ -154,11 +151,14 @@ Ne mets aucun texte avant ou après le JSON.
       return NextResponse.json({ error: 'Le modèle n’a pas généré un JSON valide.' }, { status: 500 });
     }
 
-    recipe.ingredients = recipe.ingredients.filter((ing: string) => {
-      return !totalAllergies.includes(ing.toLowerCase());
-    });
+    
+    recipe.ingredients = Array.isArray(recipe.ingredients)
+      ? recipe.ingredients.filter((ing: any) =>
+          typeof ing.name === 'string' && !totalAllergies.includes(ing.name.toLowerCase())
+        )
+      : [];
 
-    return NextResponse.json({ recipe }, { status: 200 });
+    return NextResponse.json(recipe, { status: 200 });
 
   } catch (err) {
     console.error('Erreur serveur:', err);
