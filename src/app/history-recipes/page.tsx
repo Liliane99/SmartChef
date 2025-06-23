@@ -16,6 +16,7 @@ export default function RecipesPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const allTags = Array.from(new Set(recipes.flatMap(r => r.tags)));
   const allTypes = Array.from(new Set(recipes.map(r => r.type)));
@@ -57,6 +58,8 @@ export default function RecipesPage() {
                 description: errorMessage
             })
             setHasError(true);
+        } finally {
+          setIsLoading(false);
         }
     };
 
@@ -110,7 +113,7 @@ export default function RecipesPage() {
     setActivePublication(null);
   };
 
-  if (!recipes.length) return <p className="text-center p-10"><Loader/></p>;
+  if (isLoading) return <div className="text-center p-10"><Loader/></div>;
 
   return (
     <>
@@ -285,6 +288,7 @@ export default function RecipesPage() {
                             width={800}
                             height={500}
                             className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                            priority
                         />
                     </div>
 

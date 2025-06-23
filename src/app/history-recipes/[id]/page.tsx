@@ -19,6 +19,7 @@ export default function Page() {
     const [recipe, setRecipe] = useState<Recipe | null>(null);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [nutrition, setNutrition] = useState<Nutrition | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const tokenFromCookie = getCookie("token");     
@@ -72,7 +73,7 @@ export default function Page() {
                         sugars: 3,
                         fats: 28,
                         saturatedFats: 12,
-                        fiber: 2,
+                        fibers: 2,
                         sodium: 680
                         })
             } catch (err) {
@@ -106,6 +107,8 @@ export default function Page() {
                     description: errorMessage
                 })
                 setHasError(true);
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchRecipe();
@@ -113,9 +116,6 @@ export default function Page() {
 
 
     const deleteRecipe = async () => {
-        const confirm = window.confirm("Voulez-vous supprimer cette recette ?");
-        if (!confirm) return;
-
         try {
             const res = await fetch(`/api/recipe/${recipe?.id}/delete`, {
                 method: "DELETE",
@@ -176,7 +176,25 @@ export default function Page() {
         }
     };
 
-    if (!recipe || !nutrition || !ingredients.length) return <p className="text-center p-10"> <Loader/></p>;
+    if (isLoading) return <div className="text-center p-10"> <Loader/></div>;
+
+    if (!(recipe && nutrition && ingredients.length)) {
+        return (
+            <>
+            <Navbar />
+            <main className="max-w-3xl mx-auto px-4 py-20 text-center">
+                <h2 className="text-2xl font-bold text-primary mb-4">Recette introuvable</h2>
+                <p className="text-gray-600 mb-6">La recette demandée n’a pas été trouvée ou a été supprimée.</p>
+                <button
+                className="btn-secondary"
+                onClick={() => router.push("/history-recipes")}
+                >
+                ← Retour aux recettes
+                </button>
+            </main>
+            </>
+        );
+    }
 
   return (
     <>

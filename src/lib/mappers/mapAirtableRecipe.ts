@@ -21,6 +21,8 @@ export function mapAirtableRecipe(airtableRecipe: AirtableRecipe) {
     isPublished: airtableRecipe.isPublished === "true" ? true : false,
     nutritionId: airtableRecipe.nutrition,
     userId: airtableRecipe.user,
-    intolerance: airtableRecipe["label (from intolerances)"] ?? []
+    intolerances:  Array.isArray(airtableRecipe.intolerances)
+      ? airtableRecipe.intolerances
+      : JSON.parse(airtableRecipe.intolerances || "[]")
   };
 }

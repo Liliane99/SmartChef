@@ -2,7 +2,9 @@
 
 import { formatDate, formatDuration } from "@/lib/format";
 import { Ingredient, Nutrition, Recipe } from "@/types";
-import Image from "next/image";
+import { Badge } from "./ui/badge";
+import { AlertTriangle } from "lucide-react";
+import { useState } from "react";
 
 interface Props {
   recipe: Recipe;
@@ -11,6 +13,9 @@ interface Props {
 }
 
 export default function RecipeDetailContent({ recipe, nutrition, ingredients }: Props) {
+  const fallbackImage = "/fallback-image.jpg";
+  const [imgSrc, setImgSrc] = useState(recipe.image);
+  
   return (
     <main>
       <div className="flex flex-wrap gap-2 mb-4">
@@ -31,14 +36,21 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
         <div className="xl:col-span-2 space-y-8">
-          <div className="rounded-2xl overflow-hidden shadow-primary-lg">
-            <Image
-              src={recipe.image}
-              alt="dish image"
-              width={800}
-              height={500}
-              className="w-full h-64 lg:h-96 object-cover"
-            />
+          <div className="text-right">
+            <div className="rounded-2xl overflow-hidden shadow-primary-lg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imgSrc}
+                  alt="dish image"
+                  width={800}
+                  height={500}
+                  className="w-full h-64 lg:h-96 object-cover"
+                  onError={() => setImgSrc(fallbackImage)}
+                />
+              </div>
+            {imgSrc === fallbackImage && (
+              <p className="text-sm text-muted">Image originale indisponible. Image par défaut utilisée.</p>
+            )}
           </div>
 
           <div className="card p-6 lg:p-8">
@@ -81,7 +93,7 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
           </div>
         </div>
 
-                <div className="xl:col-span-1 space-y-6 sticky top-6 h-fit self-start">
+        <div className="xl:col-span-1 space-y-6 sticky top-6 h-fit self-start">
 
           <div className="card p-6">
             <h3 className="text-xl lg:text-2xl font-semibold text-primary mb-6 flex items-center">
@@ -116,6 +128,27 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
               </div>
             </div>
           </div>
+                    
+          <div className="card p-6">
+            <h3 className="text-xl lg:text-2xl font-semibold text-primary mb-6 flex items-center">
+              <AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6 mr-3 text-primary" />
+              Intolérances
+            </h3>
+            <div className="space-y-4">
+              {recipe.intolerances.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {recipe.intolerances.map((intol, idx) => (
+                    <Badge variant="outline" key={idx} className="text-sm">
+                      {intol}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted text-sm">Aucune intolérance spécifiée.</p>
+              )}
+
+            </div>
+          </div>
 
           <div className="card p-6">
             <h3 className="text-xl lg:text-2xl font-semibold text-primary mb-4 flex items-center">
@@ -127,7 +160,7 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
             <p className="text-sm text-gray-500 mb-6">Par portion</p>
             <div className="bg-gradient-to-r from-primary/25 to-primary/15 rounded-xl p-5 mb-6 text-center border border-primary/30 shadow-lg">
               <div className="text-4xl font-bold text-primary mb-2">{nutrition.calories}</div>
-              <div className="text-sm font-semibold text-primary/80">kcal</div>
+              <div className="text-sm font-semibold text-primary/80"></div>
             </div>
             <div className="grid grid-cols-2 gap-5 mb-6">
               {[
@@ -140,7 +173,7 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
                   <div className={`w-18 h-18 mx-auto bg-gradient-to-br from-${item.color}-100 to-${item.color}-200 rounded-full flex items-center justify-center mb-3 border-2 border-${item.color}-300 shadow-md hover:scale-105 transition-transform`}>
                     <div>
                       <div className={`text-lg font-bold text-${item.color}-700`}>{item.value}</div>
-                      <div className={`text-xs text-${item.color}-600 font-medium`}>g</div>
+                      <div className={`text-xs text-${item.color}-600 font-medium`}></div>
                     </div>
                   </div>
                   <div className={`text-xs text-${item.color}-600 font-semibold`}>{item.label}</div>
@@ -150,15 +183,15 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
             <div className="border-t border-gray-200 pt-4 space-y-3">
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Graisses saturées</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.saturatedFats}g</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.saturatedFats}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Fibres</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.fiber}g</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.fibers}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Sodium</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.sodium}mg</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.sodium}</span>
               </div>
             </div>
           </div>
