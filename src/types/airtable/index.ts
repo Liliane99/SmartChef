@@ -12,8 +12,7 @@ export interface AirtableRecipe {
   image:AirtableImage[];
   tags: string[];
   ingredients: string;
-  intolerances: string;
-  "label (from intolerances)": string[];
+  intolerances: string[];
   steps: string[];
   servings: number;
   preparationTime: number;
