@@ -7,7 +7,7 @@ import Loader from "@/components/Loader";
 import RecipeForm, { SubmitData } from "@/components/RecipeForm";
 import RecipeRecap from "@/components/RecipeRecap";
 import RecipeDetailContent from "@/components/RecipeDetailContent";
-import { Ingredient, IntoleranceSelection, Recipe } from "@/types";
+import { IntoleranceSelection, Recipe } from "@/types";
 import { useAlert } from "@/components/AlertContext";
 import { getCookie } from "@/lib/auth";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -86,10 +86,10 @@ export default function RecipeGenerationPage() {
         });
 
         const generatedRecipe = await res.json();
-        
-        const mappedRecipe = mapJsonToRecipeObject(generatedRecipe);
-
-        setRecipe(mappedRecipe);
+        setRecipe({
+          ...generatedRecipe,
+          createdAt: new Date()
+        });
         setStep("result");
 
     } catch (error) {
@@ -161,32 +161,6 @@ export default function RecipeGenerationPage() {
         })
     }
   };
-
-  const mapJsonToRecipeObject = (generatedRecipe): Recipe => {
-    const ingredientsParsed = generatedRecipe.ingredients.map((ing: Ingredient) => ({
-      name: ing.name,
-      quantity: Number(ing.quantity), 
-      unit: ing.unit || undefined, 
-    }));
-    
-    const recipe: Recipe = {
-        title: generatedRecipe.title,
-        description: generatedRecipe.description,
-        image: generatedRecipe.image,
-        tags: generatedRecipe.tags,
-        ingredients: ingredientsParsed,
-        steps: generatedRecipe.steps,
-        servings: generatedRecipe.servings,
-        preparationTime: generatedRecipe.preparationTime,
-        cookTime: generatedRecipe.cookTime,
-        nutrition: generatedRecipe.nutrition,
-        type: generatedRecipe.type,
-        intolerances: generatedRecipe.intolerances,
-        createdAt: new Date()
-    }
-    return recipe;
-  }
-
   return (
     <>
       <Navbar />

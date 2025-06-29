@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         fields: {
           calories: nutrition.calories || "0",
-          proteins: nutrition.proteins || "0", 
+          proteins: nutrition.proteins || "0",
           carbohydrates: nutrition.carbohydrates || "0",
           fats: nutrition.fats || "0",
           sugars: nutrition.sugars || "0",
-          saturatedfats: nutrition.saturatedFats || "0",
+          saturatedFats: nutrition.saturatedFats || "0",  
           fibers: nutrition.fibers || "0",
           sodium: nutrition.sodium || "0",
           "id (from recipe)": [recipeId]

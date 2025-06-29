@@ -11,7 +11,7 @@ export interface AirtableRecipe {
   tags: string[];
   ingredients: string[];
   intolerances: string[];
-  steps: string; 
+  steps: string;
   servings: number;
   preparationTime: number;
   cookTime: number;
@@ -36,7 +36,7 @@ export interface AirtableNutrition {
   carbohydrates: string;
   fats: string;
   sugars: string;
-  saturatedfats: string;
+  saturatedFats: string;  
   fibers: string;
   sodium: string;
   "id (from recipe)": string[];

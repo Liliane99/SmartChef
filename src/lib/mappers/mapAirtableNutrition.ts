@@ -7,7 +7,7 @@ export function mapAirtableNutrition(airtableNutrition: AirtableNutrition) {
     carbohydrates: parseInt(airtableNutrition.carbohydrates) || 0,
     fats: parseInt(airtableNutrition.fats) || 0,
     sugars: parseInt(airtableNutrition.sugars) || 0,
-    saturatedFats: parseInt(airtableNutrition.saturatedfats) || 0,
+    saturatedFats: parseInt(airtableNutrition.saturatedFats) || 0,  
     fibers: parseInt(airtableNutrition.fibers) || 0,
     sodium: parseInt(airtableNutrition.sodium) || 0,
   };

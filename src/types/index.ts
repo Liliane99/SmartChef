@@ -15,17 +15,17 @@ export interface Recipe {
   description: string;
   image: string;
   tags: string[];
-  ingredients: Ingredient[];       
+  ingredients: Ingredient[];          
   intolerances: string[];
   steps: string[];
   servings: number;
   preparationTime: number;
   cookTime: number;
-  nutrition: Nutrition;             
+  nutrition: Nutrition;                
   type: string;
   createdAt: Date;
   isPublished?: boolean;
-  ingredientsId?: string[];         
+  ingredientsId?: string[];            
   nutritionId?: string[];
   userId?: string[];
 }
@@ -36,4 +36,22 @@ export interface Ingredient {
   unit?: string;
 }
 
-export type IntoleranceSelection = { id: string; label: string };
+export type IntoleranceSelection = { 
+  id: string; 
+  label: string; 
+};
+
+export type RecipeInput = Omit<Recipe, 'id' | 'createdAt' | 'ingredientsId' | 'nutritionId' | 'userId'>;
+
+export type IngredientInput = Ingredient;
+export type NutritionInput = Nutrition;
+
+export interface CreateIngredientPayload {
+  ingredients: Ingredient[];
+  recipeId: string;
+}
+
+export interface CreateNutritionPayload {
+  nutrition: Nutrition;
+  recipeId: string;
+}

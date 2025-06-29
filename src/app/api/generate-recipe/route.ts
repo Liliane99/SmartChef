@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { Ingredient } from '@/types'; 
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER, JWT_SECRET } = process.env;
-
-interface IngredientFromAI {
-  name: string;
-  quantity: number;
-  unit?: string;
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -157,9 +152,8 @@ Ne mets aucun texte avant ou après le JSON.
       return NextResponse.json({ error: 'Le modèle n\'a pas généré un JSON valide.' }, { status: 500 });
     }
 
-    
     recipe.ingredients = Array.isArray(recipe.ingredients)
-      ? recipe.ingredients.filter((ing: IngredientFromAI) => 
+      ? recipe.ingredients.filter((ing: Ingredient) => 
           typeof ing.name === 'string' && !totalAllergies.includes(ing.name.toLowerCase())
         )
       : [];
