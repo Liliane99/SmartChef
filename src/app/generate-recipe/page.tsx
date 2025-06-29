@@ -29,7 +29,6 @@ export default function RecipeGenerationPage() {
   const [intoleranceSuggestions, setIntoleranceSuggestions] = useState<IntoleranceSelection[]>([]);
   const [hasError, setHasError] = useState(false);
 
-
   useEffect(() => {
     const tokenFromCookie = getCookie("token");     
     
@@ -64,7 +63,6 @@ export default function RecipeGenerationPage() {
     
     fetchIntolerances();
   }, [hasError, token]);
-
 
   const handleGenerate = async (data: SubmitData) => {
     try {
@@ -104,11 +102,20 @@ export default function RecipeGenerationPage() {
     }
   };
 
-  const createRecipe = async (ingredientsId: string[], nutritionId: string) => {
+  const createRecipe = async () => {
     const recipePayload = {
-        ...recipe,
-        ingredients: ingredientsId,
-        nutrition: nutritionId
+      title: recipe.title,
+      description: recipe.description,
+      servings: recipe.servings,
+      preparationTime: recipe.preparationTime,
+      cookTime: recipe.cookTime,
+      type: recipe.type,
+      steps: recipe.steps,
+      tags: recipe.tags,
+      intolerances: recipe.intolerances,
+      image: recipe.image,
+      ingredients: recipe.ingredients,
+      nutrition: recipe.nutrition
     };
 
     const res = await fetch("/api/recipe/create", {
@@ -116,11 +123,16 @@ export default function RecipeGenerationPage() {
       headers: { 
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-     },
+      },
       body: JSON.stringify(recipePayload),
     });
+    
     const saved = await res.json();
-
+    
+    if (!res.ok) {
+      throw new Error(`Erreur ${res.status}: ${JSON.stringify(saved)}`);
+    }
+    
     return saved.id;
   }
 
@@ -128,13 +140,7 @@ export default function RecipeGenerationPage() {
     try {
         if (!recipe) return;
     
-        // const ingredientsId: string[] = await createIngredients();
-        // const nutritionId: string = await createNutrition();
-    
-        const ingredientsId = ['', ''];
-        const nutritionId = '';
-    
-        const recipeId = await createRecipe(ingredientsId, nutritionId);
+        const recipeId = await createRecipe();
         
         showAlert({
             type: "success",
@@ -147,7 +153,7 @@ export default function RecipeGenerationPage() {
         }, 2000)
 
     } catch (error) {
-        console.error(error);
+        console.error("ERREUR HANDLE SAVE:", error);
         showAlert({
             type: "error",
             title: "Erreur",

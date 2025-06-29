@@ -10,40 +10,30 @@ export interface Nutrition {
 }
 
 export interface Recipe {
-  id?: number;
+  id?: string;
   title: string;
   description: string;
   image: string;
   tags: string[];
-  ingredients: Ingredient[];
+  ingredients: Ingredient[];       
   intolerances: string[];
   steps: string[];
   servings: number;
   preparationTime: number;
   cookTime: number;
-  nutrition: Nutrition;
+  nutrition: Nutrition;             
   type: string;
   createdAt: Date;
-  isPublished?: boolean
+  isPublished?: boolean;
+  ingredientsId?: string[];         
+  nutritionId?: string[];
+  userId?: string[];
 }
 
 export interface Ingredient {
   name: string;
   quantity: number;
   unit?: string;
-}
-
-export interface CreateRecipe {
-  title: string;
-  description: string;
-  image: string;
-  tags: string[];
-  steps: string[];
-  servings: number;
-  preparationTime: number;
-  cookTime: number;
-  type: string;
-  createdAt: string;
 }
 
 export type IntoleranceSelection = { id: string; label: string };

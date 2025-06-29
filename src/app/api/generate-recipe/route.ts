@@ -4,6 +4,12 @@ import jwt from 'jsonwebtoken';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER, JWT_SECRET } = process.env;
 
+interface IngredientFromAI {
+  name: string;
+  quantity: number;
+  unit?: string;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get('authorization');
@@ -42,7 +48,7 @@ export async function POST(req: NextRequest) {
     const allergies = userData?.fields?.label_intolerances?.map((a: string) => a.toLowerCase()) || [];
 
     const body = await req.json();
-    let { ingredients, portion, type, additionalAllergies } = body;
+    const { ingredients, portion, type, additionalAllergies } = body; 
 
     if (!Array.isArray(ingredients) || ingredients.length === 0 || !portion || !type) {
       return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
@@ -99,8 +105,8 @@ Retourne uniquement un JSON strictement valide avec cette structure :
   ],
   "steps": ["Étape 1", "Étape 2", "..."],
   "servings": ${portion},
-  "preparationTime": "Temps de préparation en minutes",
-  "cookTime": "Temps de cuisson en minutes",
+  "preparationTime": "Temps de préparation en minutes doit etre retourner comme un chiffre pas un string",
+  "cookTime": "Temps de cuisson en minutes doit etre retourner comme un chiffre pas un string",
   "image": "URL d'une image provenant uniquement de Unsplash (https://images.unsplash.com/), Pixabay (https://cdn.pixabay.com/), ou Pexels (https://images.pexels.com/)",
   "tags": ["Origine", "Difficulté", "Végétarien ou Non", "Style"],
   "intolerances": ["${totalAllergies.join('","')}"],
@@ -148,12 +154,12 @@ Ne mets aucun texte avant ou après le JSON.
       recipe = JSON.parse(content);
     } catch (parseError) {
       console.error('Erreur parsing JSON:', parseError);
-      return NextResponse.json({ error: 'Le modèle n’a pas généré un JSON valide.' }, { status: 500 });
+      return NextResponse.json({ error: 'Le modèle n\'a pas généré un JSON valide.' }, { status: 500 });
     }
 
     
     recipe.ingredients = Array.isArray(recipe.ingredients)
-      ? recipe.ingredients.filter((ing: any) =>
+      ? recipe.ingredients.filter((ing: IngredientFromAI) => 
           typeof ing.name === 'string' && !totalAllergies.includes(ing.name.toLowerCase())
         )
       : [];

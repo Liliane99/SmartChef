@@ -17,8 +17,6 @@ export default function Page() {
     const [token, setToken] = useState<string | null>(null);
     const [hasError, setHasError] = useState(false);
     const [recipe, setRecipe] = useState<Recipe | null>(null);
-    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-    const [nutrition, setNutrition] = useState<Nutrition | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -40,45 +38,44 @@ export default function Page() {
             return;
         }
 
-        const fetchIngredients = async (id: string) => {
+        const fetchIngredients = async (ids: string[]): Promise<Ingredient[]> => {
             try {
-                // const res = await fetch(`/api/ingredient/${id}/findById`, {
-                //     headers: { Authorization: `Bearer ${token}` },
-                // });
-                // if (!res.ok) throw new Error("Recovery failed");
-                // const data = await res.json();
-                // setIngredients((prev: Ingredient[]) => [...prev, data]);
-                setIngredients([
-                    {name: "Tomate", quantity: 5},
-                    {name: "Sucre", quantity: 20, unit: 'g'}
-                ])
+                const ingredientPromises = ids.map(ingredientId => 
+                    fetch(`/api/ingredient/${ingredientId}/findById`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }).then(res => {
+                        if (!res.ok) throw new Error("Failed to fetch ingredient");
+                        return res.json();
+                    })
+                );
+                
+                return await Promise.all(ingredientPromises);
             } catch (err) {
                 console.error("Error retrieving ingredients:", err);
-                setHasError(true);
+                return [];
             }
         } 
 
-        const fetchNutrition = async (id: string) => {
+        const fetchNutrition = async (nutritionId: string): Promise<Nutrition> => {
             try {
-                // const res = await fetch(`/api/nutrition/${id}/findById`, {
-                //     headers: { Authorization: `Bearer ${token}` },
-                // });
-                // if (!res.ok) throw new Error("Recovery failed");
-                // const data = await res.json();
-                //setNutrition(data);
-                setNutrition({
-                        calories: 520,
-                        proteins: 22,
-                        carbohydrates: 45,
-                        sugars: 3,
-                        fats: 28,
-                        saturatedFats: 12,
-                        fibers: 2,
-                        sodium: 680
-                        })
+                const res = await fetch(`/api/nutrition/${nutritionId}/findById`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if (!res.ok) throw new Error("Recovery failed");
+                return await res.json();
             } catch (err) {
                 console.error("Nutrition recovery error:", err);
-                setHasError(true);
+                return {
+                    calories: 0,
+                    proteins: 0,
+                    carbohydrates: 0,
+                    sugars: 0,
+                    fats: 0,
+                    saturatedFats: 0,
+                    fibers: 0,
+                    sodium: 0
+                };
             }
         }
 
@@ -89,15 +86,33 @@ export default function Page() {
                 });
 
                 if (!res.ok) throw new Error("La recette n'a pas pu être récupérée");
-                const data = await res.json();
-                setRecipe(data);
-
-                await Promise.all([
-                    fetchNutrition(data.nutritionId),
-                    Promise.all(
-                        data.ingredientsId.map((id: string) => fetchIngredients(id))
-                    )
+                const recipeData = await res.json();
+                const [ingredients, nutrition] = await Promise.all([
+                    recipeData.ingredientsId && recipeData.ingredientsId.length > 0 
+                        ? fetchIngredients(recipeData.ingredientsId)
+                        : [],
+                    recipeData.nutritionId && recipeData.nutritionId.length > 0
+                        ? fetchNutrition(recipeData.nutritionId[0])
+                        : {
+                            calories: 0,
+                            proteins: 0,
+                            carbohydrates: 0,
+                            sugars: 0,
+                            fats: 0,
+                            saturatedFats: 0,
+                            fibers: 0,
+                            sodium: 0
+                        }
                 ]);
+
+                const completeRecipe: Recipe = {
+                    ...recipeData,
+                    ingredients: ingredients,
+                    nutrition: nutrition,
+                    createdAt: new Date(recipeData.createdAt)
+                };
+
+                setRecipe(completeRecipe);
 
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : String(err);
@@ -111,9 +126,9 @@ export default function Page() {
                 setIsLoading(false);
             }
         };
+        
         fetchRecipe();
     }, [token, id, showAlert, hasError, router]);
-
 
     const deleteRecipe = async () => {
         try {
@@ -157,7 +172,7 @@ export default function Page() {
 
         if (res.ok) {
             const updated = await res.json();
-            setRecipe(updated);
+            setRecipe(prev => prev ? {...prev, isPublished: updated.isPublished} : null);
             showAlert({
                 type: "success",
                 title: updated.isPublished ? "Publiée" : "Dépubliée",
@@ -178,13 +193,13 @@ export default function Page() {
 
     if (isLoading) return <div className="text-center p-10"> <Loader/></div>;
 
-    if (!(recipe && nutrition && ingredients.length)) {
+    if (!recipe) {
         return (
             <>
             <Navbar />
             <main className="max-w-3xl mx-auto px-4 py-20 text-center">
                 <h2 className="text-2xl font-bold text-primary mb-4">Recette introuvable</h2>
-                <p className="text-gray-600 mb-6">La recette demandée n’a pas été trouvée ou a été supprimée.</p>
+                <p className="text-gray-600 mb-6">La recette demandée n'a pas été trouvée ou a été supprimée.</p>
                 <button
                 className="btn-secondary"
                 onClick={() => router.push("/history-recipes")}
@@ -212,7 +227,11 @@ export default function Page() {
                     ← Retour aux recettes
                 </button>
             </div>
-            <RecipeDetailContent recipe={recipe} nutrition={nutrition} ingredients={ingredients} />
+            <RecipeDetailContent 
+                recipe={recipe} 
+                nutrition={recipe.nutrition} 
+                ingredients={recipe.ingredients} 
+            />
 
             <div className="flex justify-center flex-row gap-4 mt-10">
                 <ConfirmModal

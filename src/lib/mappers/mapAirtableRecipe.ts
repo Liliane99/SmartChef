@@ -10,9 +10,9 @@ export function mapAirtableRecipe(airtableRecipe: AirtableRecipe) {
       ? airtableRecipe.tags
       : JSON.parse(airtableRecipe.tags || "[]"),
     ingredientsId: airtableRecipe.ingredients,
-    steps: Array.isArray(airtableRecipe.steps)
-      ? airtableRecipe.steps
-      : JSON.parse(airtableRecipe.steps || "[]"),
+    steps: typeof airtableRecipe.steps === 'string'
+      ? airtableRecipe.steps.split('\n').map(step => step.replace(/^\d+\.\s*/, '')) 
+      : airtableRecipe.steps,
     servings: airtableRecipe.servings,
     preparationTime: airtableRecipe.preparationTime,
     cookTime: airtableRecipe.cookTime,
@@ -21,7 +21,7 @@ export function mapAirtableRecipe(airtableRecipe: AirtableRecipe) {
     isPublished: airtableRecipe.isPublished === "true" ? true : false,
     nutritionId: airtableRecipe.nutrition,
     userId: airtableRecipe.user,
-    intolerances:  Array.isArray(airtableRecipe.intolerances)
+    intolerances: Array.isArray(airtableRecipe.intolerances)
       ? airtableRecipe.intolerances
       : JSON.parse(airtableRecipe.intolerances || "[]")
   };

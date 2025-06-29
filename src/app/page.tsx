@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Header from '@/components/header';
+import Header from '@/components/navbar';
 import Footer from '@/components/footer';
 import { Sparkles, Clock, Users, Shield, BookOpen, Zap, Star, ArrowRight, Check, Search } from 'lucide-react';
 
