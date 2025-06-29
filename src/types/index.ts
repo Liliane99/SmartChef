@@ -1,12 +1,12 @@
 export interface Nutrition {
-  calories: number;
-  proteins: number;
-  carbohydrates: number;
-  sugars: number;
-  fats: number;
-  saturatedFats: number;
-  fibers: number;
-  sodium: number;
+  calories: string;
+  proteins: string;
+  carbohydrates: string;
+  sugars: string;
+  fats: string;
+  saturatedFats: string;
+  fibers: string;
+  sodium: string;
 }
 
 export interface Recipe {

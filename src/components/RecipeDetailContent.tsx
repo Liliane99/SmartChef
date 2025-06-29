@@ -165,7 +165,6 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
             <p className="text-sm text-gray-500 mb-6">Par portion</p>
             <div className="bg-gradient-to-r from-primary/25 to-primary/15 rounded-xl p-5 mb-6 text-center border border-primary/30 shadow-lg">
               <div className="text-4xl font-bold text-primary mb-2">{nutrition.calories}</div>
-              <div className="text-sm font-semibold text-primary/80">kcal</div>
             </div>
             <div className="grid grid-cols-2 gap-5 mb-6">
               {[
@@ -178,7 +177,6 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
                   <div className={`w-18 h-18 mx-auto bg-gradient-to-br from-${item.color}-100 to-${item.color}-200 rounded-full flex items-center justify-center mb-3 border-2 border-${item.color}-300 shadow-md hover:scale-105 transition-transform`}>
                     <div>
                       <div className={`text-lg font-bold text-${item.color}-700`}>{item.value}</div>
-                      <div className={`text-xs text-${item.color}-600 font-medium`}>g</div>
                     </div>
                   </div>
                   <div className={`text-xs text-${item.color}-600 font-semibold`}>{item.label}</div>
@@ -188,15 +186,15 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
             <div className="border-t border-gray-200 pt-4 space-y-3">
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Graisses saturées</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.saturatedFats}g</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.saturatedFats}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Fibres</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.fibers}g</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.fibers}</span>
               </div>
               <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
                 <span className="text-gray-700 text-sm font-medium">Sodium</span>
-                <span className="font-semibold text-sm text-gray-800">{nutrition.sodium}mg</span>
+                <span className="font-semibold text-sm text-gray-800">{nutrition.sodium}</span>
               </div>
             </div>
           </div>

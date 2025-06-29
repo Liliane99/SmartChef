@@ -1,4 +1,3 @@
-
 import { getUserFromRequest } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { Ingredient } from "@/types";
@@ -43,13 +42,16 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ records: ingredientRecords }),
+      body: JSON.stringify({ 
+        records: ingredientRecords,
+        typecast: true
+      }),
     });
 
     const data: AirtableResponse = await airtableRes.json();
 
     if (!airtableRes.ok) {
-      if (data.error && data.error.message && data.error.message.includes('quantity')) {
+      if (data.error) {
         const alternativeRecords = ingredients.map((ingredient: Ingredient) => ({
           fields: {
             name: ingredient.name,
@@ -65,7 +67,10 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${AIRTABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ records: alternativeRecords }),
+          body: JSON.stringify({ 
+            records: alternativeRecords,
+            typecast: true
+          }),
         });
 
         const alternativeData = await alternativeRes.json();
