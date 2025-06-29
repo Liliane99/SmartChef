@@ -7,7 +7,7 @@ import Loader from "@/components/Loader";
 import RecipeForm, { SubmitData } from "@/components/RecipeForm";
 import RecipeRecap from "@/components/RecipeRecap";
 import RecipeDetailContent from "@/components/RecipeDetailContent";
-import { Ingredient, IntoleranceSelection, Recipe } from "@/types";
+import { IntoleranceSelection, Recipe } from "@/types";
 import { useAlert } from "@/components/AlertContext";
 import { getCookie } from "@/lib/auth";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,6 @@ export default function RecipeGenerationPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [intoleranceSuggestions, setIntoleranceSuggestions] = useState<IntoleranceSelection[]>([]);
   const [hasError, setHasError] = useState(false);
-
 
   useEffect(() => {
     const tokenFromCookie = getCookie("token");     
@@ -65,7 +64,6 @@ export default function RecipeGenerationPage() {
     fetchIntolerances();
   }, [hasError, token]);
 
-
   const handleGenerate = async (data: SubmitData) => {
     try {
         const formattedData = {
@@ -88,10 +86,10 @@ export default function RecipeGenerationPage() {
         });
 
         const generatedRecipe = await res.json();
-        
-        const mappedRecipe = mapJsonToRecipeObject(generatedRecipe);
-
-        setRecipe(mappedRecipe);
+        setRecipe({
+          ...generatedRecipe,
+          createdAt: new Date()
+        });
         setStep("result");
 
     } catch (error) {
@@ -104,11 +102,20 @@ export default function RecipeGenerationPage() {
     }
   };
 
-  const createRecipe = async (ingredientsId: string[], nutritionId: string) => {
+  const createRecipe = async () => {
     const recipePayload = {
-        ...recipe,
-        ingredients: ingredientsId,
-        nutrition: nutritionId
+      title: recipe.title,
+      description: recipe.description,
+      servings: recipe.servings,
+      preparationTime: recipe.preparationTime,
+      cookTime: recipe.cookTime,
+      type: recipe.type,
+      steps: recipe.steps,
+      tags: recipe.tags,
+      intolerances: recipe.intolerances,
+      image: recipe.image,
+      ingredients: recipe.ingredients,
+      nutrition: recipe.nutrition
     };
 
     const res = await fetch("/api/recipe/create", {
@@ -116,11 +123,16 @@ export default function RecipeGenerationPage() {
       headers: { 
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-     },
+      },
       body: JSON.stringify(recipePayload),
     });
+    
     const saved = await res.json();
-
+    
+    if (!res.ok) {
+      throw new Error(`Erreur ${res.status}: ${JSON.stringify(saved)}`);
+    }
+    
     return saved.id;
   }
 
@@ -128,13 +140,7 @@ export default function RecipeGenerationPage() {
     try {
         if (!recipe) return;
     
-        // const ingredientsId: string[] = await createIngredients();
-        // const nutritionId: string = await createNutrition();
-    
-        const ingredientsId = ['', ''];
-        const nutritionId = '';
-    
-        const recipeId = await createRecipe(ingredientsId, nutritionId);
+        const recipeId = await createRecipe();
         
         showAlert({
             type: "success",
@@ -147,7 +153,7 @@ export default function RecipeGenerationPage() {
         }, 2000)
 
     } catch (error) {
-        console.error(error);
+        console.error("ERREUR HANDLE SAVE:", error);
         showAlert({
             type: "error",
             title: "Erreur",
@@ -155,32 +161,6 @@ export default function RecipeGenerationPage() {
         })
     }
   };
-
-  const mapJsonToRecipeObject = (generatedRecipe): Recipe => {
-    const ingredientsParsed = generatedRecipe.ingredients.map((ing: Ingredient) => ({
-      name: ing.name,
-      quantity: Number(ing.quantity), 
-      unit: ing.unit || undefined, 
-    }));
-    
-    const recipe: Recipe = {
-        title: generatedRecipe.title,
-        description: generatedRecipe.description,
-        image: generatedRecipe.image,
-        tags: generatedRecipe.tags,
-        ingredients: ingredientsParsed,
-        steps: generatedRecipe.steps,
-        servings: generatedRecipe.servings,
-        preparationTime: generatedRecipe.preparationTime,
-        cookTime: generatedRecipe.cookTime,
-        nutrition: generatedRecipe.nutrition,
-        type: generatedRecipe.type,
-        intolerances: generatedRecipe.intolerances,
-        createdAt: new Date()
-    }
-    return recipe;
-  }
-
   return (
     <>
       <Navbar />
