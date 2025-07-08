@@ -103,6 +103,7 @@ export default function RecipeGenerationPage() {
   };
 
   const createRecipe = async () => {
+    if (!recipe) return;
     const recipePayload = {
       title: recipe.title,
       description: recipe.description,

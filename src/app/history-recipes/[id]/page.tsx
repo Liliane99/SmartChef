@@ -67,14 +67,14 @@ export default function Page() {
             } catch (err) {
                 console.error("Nutrition recovery error:", err);
                 return {
-                    calories: 0,
-                    proteins: 0,
-                    carbohydrates: 0,
-                    sugars: 0,
-                    fats: 0,
-                    saturatedFats: 0,
-                    fibers: 0,
-                    sodium: 0
+                    calories: '0',
+                    proteins: '0',
+                    carbohydrates: '0',
+                    sugars: '0',
+                    fats: '0',
+                    saturatedFats: '0',
+                    fibers: '0',
+                    sodium: '0'
                 };
             }
         }
@@ -199,7 +199,7 @@ export default function Page() {
             <Navbar />
             <main className="max-w-3xl mx-auto px-4 py-20 text-center">
                 <h2 className="text-2xl font-bold text-primary mb-4">Recette introuvable</h2>
-                <p className="text-gray-600 mb-6">La recette demandée n'a pas été trouvée ou a été supprimée.</p>
+                <p className="text-gray-600 mb-6">La recette demandée n&apos;a pas été trouvée ou a été supprimée.</p>
                 <button
                 className="btn-secondary"
                 onClick={() => router.push("/history-recipes")}

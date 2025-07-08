@@ -287,7 +287,7 @@ export default function RecipesPage() {
                           />
                         ) : (
                           <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded-lg">
-                            <span className="text-gray-500">Pas d'image</span>
+                            <span className="text-gray-500">Pas d&apos;image</span>
                           </div>
                         )}
                     </div>
