@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 const { AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_USER, JWT_SECRET } = process.env;
 const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_USER}`;
 
-
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get("Authorization");
@@ -16,9 +15,13 @@ export async function POST(request: Request) {
     const idToken = authHeader.replace("Bearer ", "");
     const decodedToken = await getAuth().verifyIdToken(idToken);
 
-    const { email, name } = decodedToken;
+    const { email, name, firebase } = decodedToken;
 
-    
+    let provider = "custom";
+    if (firebase?.sign_in_provider === "google.com") {
+      provider = "google";
+    }
+
     const checkRes = await fetch(`${AIRTABLE_API_URL}?filterByFormula=({email}="${email}")`, {
       headers: {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
@@ -27,18 +30,15 @@ export async function POST(request: Request) {
     const checkData = await checkRes.json();
 
     if (checkData.records.length > 0) {
-      
       const record = checkData.records[0];
       const token = jwt.sign(
         { id: record.id, email: record.fields.email, username: record.fields.username },
         JWT_SECRET as string,
         { expiresIn: "7d" }
       );
-
       return NextResponse.json({ token });
     }
 
-    
     const createRes = await fetch(AIRTABLE_API_URL, {
       method: "POST",
       headers: {
@@ -49,11 +49,17 @@ export async function POST(request: Request) {
         fields: {
           email,
           username: name || email,
+          provider,
         },
       }),
     });
 
     const createdUser = await createRes.json();
+
+    if (!createRes.ok) {
+      console.error("Erreur création Airtable:", createdUser);
+      return NextResponse.json({ error: "Erreur création utilisateur" }, { status: 500 });
+    }
 
     const token = jwt.sign(
       { id: createdUser.id, email, username: name || email },
