@@ -1,24 +1,43 @@
-import { Nutrition } from "..";
-
 type AirtableImage = {
   url: string;
 };
 
 export interface AirtableRecipe {
-  id: number;
-  user: string;
+  id: string;
+  user: string[];
   title: string;
   description: string;
-  image:AirtableImage[];
+  image: AirtableImage[];
   tags: string[];
-  ingredients: string;
+  ingredients: string[];
   intolerances: string[];
-  steps: string[];
+  steps: string;
   servings: number;
   preparationTime: number;
   cookTime: number;
-  nutrition: Nutrition;
+  nutrition: string[];
   type: string;
   createdAt: string;
   isPublished: string;
+}
+
+export interface AirtableIngredient {
+  id: string;
+  name: string;
+  quantity: number;
+  unit?: string;
+  Recipe: string[];
+}
+
+export interface AirtableNutrition {
+  id: string;
+  calories: string;
+  proteins: string;
+  carbohydrates: string;
+  fats: string;
+  sugars: string;
+  saturatedFats: string;  
+  fibers: string;
+  sodium: string;
+  "id (from recipe)": string[];
 }

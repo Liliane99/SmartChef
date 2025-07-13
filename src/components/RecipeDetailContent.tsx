@@ -14,7 +14,7 @@ interface Props {
 
 export default function RecipeDetailContent({ recipe, nutrition, ingredients }: Props) {
   const fallbackImage = "/fallback-image.jpg";
-  const [imgSrc, setImgSrc] = useState(recipe.image);
+  const [imgSrc, setImgSrc] = useState(recipe.image || fallbackImage); 
   
   return (
     <main>
@@ -38,17 +38,22 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
         <div className="xl:col-span-2 space-y-8">
           <div className="text-right">
             <div className="rounded-2xl overflow-hidden shadow-primary-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imgSrc}
-                  alt="dish image"
-                  width={800}
-                  height={500}
-                  className="w-full h-64 lg:h-96 object-cover"
-                  onError={() => setImgSrc(fallbackImage)}
-                />
+                {recipe.image && recipe.image.trim() !== "" ? ( 
+                  <img
+                    src={imgSrc}
+                    alt="dish image"
+                    width={800}
+                    height={500}
+                    className="w-full h-64 lg:h-96 object-cover"
+                    onError={() => setImgSrc(fallbackImage)}
+                  />
+                ) : (
+                  <div className="w-full h-64 lg:h-96 bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Aucune image disponible</span>
+                  </div>
+                )}
               </div>
-            {imgSrc === fallbackImage && (
+            {imgSrc === fallbackImage && recipe.image && (
               <p className="text-sm text-muted">Image originale indisponible. Image par défaut utilisée.</p>
             )}
           </div>
@@ -135,7 +140,7 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
               Intolérances
             </h3>
             <div className="space-y-4">
-              {recipe.intolerances.length > 0 ? (
+              {recipe.intolerances && recipe.intolerances.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {recipe.intolerances.map((intol, idx) => (
                     <Badge variant="outline" key={idx} className="text-sm">
@@ -160,7 +165,6 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
             <p className="text-sm text-gray-500 mb-6">Par portion</p>
             <div className="bg-gradient-to-r from-primary/25 to-primary/15 rounded-xl p-5 mb-6 text-center border border-primary/30 shadow-lg">
               <div className="text-4xl font-bold text-primary mb-2">{nutrition.calories}</div>
-              <div className="text-sm font-semibold text-primary/80"></div>
             </div>
             <div className="grid grid-cols-2 gap-5 mb-6">
               {[
@@ -173,7 +177,6 @@ export default function RecipeDetailContent({ recipe, nutrition, ingredients }: 
                   <div className={`w-18 h-18 mx-auto bg-gradient-to-br from-${item.color}-100 to-${item.color}-200 rounded-full flex items-center justify-center mb-3 border-2 border-${item.color}-300 shadow-md hover:scale-105 transition-transform`}>
                     <div>
                       <div className={`text-lg font-bold text-${item.color}-700`}>{item.value}</div>
-                      <div className={`text-xs text-${item.color}-600 font-medium`}></div>
                     </div>
                   </div>
                   <div className={`text-xs text-${item.color}-600 font-semibold`}>{item.label}</div>
