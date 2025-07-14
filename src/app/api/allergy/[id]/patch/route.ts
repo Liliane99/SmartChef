@@ -5,7 +5,7 @@ const AIRTABLE_API_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRT
 
 
 export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const body = await req.json();
 
   try {

@@ -11,52 +11,59 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+type Allergy = {
+  id: string;
+  label: string;
+};
+
 const AllergiesSelectionPage = () => {
   const router = useRouter();
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
   const [customAllergy, setCustomAllergy] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [allergyOptions, setAllergyOptions] = useState<string[]>([]);
-  const [userId, setUserId] = useState<string | null>(null); 
+  const [allergyOptions, setAllergyOptions] = useState<Allergy[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = document.cookie
       .split("; ")
       .find((row) => row.startsWith("token="))
       ?.split("=")[1];
-  
+
     if (!token) {
       router.push("/login");
       return;
     }
-  
-    // On ajoute l’en‑tête Authorization sur TOUTES les requêtes qui en ont besoin
+
     const authHeaders = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     };
-  
+
     const fetchAllergies = async () => {
       try {
         const res = await fetch("/api/allergy/findAll", {
           method: "GET",
-          headers: authHeaders
+          headers: authHeaders,
         });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        const labels = data.users.map((record: any) => record.fields.label);
-        setAllergyOptions(labels);
+        const allergies: Allergy[] = data.users.map((record: any) => ({
+          id: record.id,
+          label: record.fields.label,
+        }));
+        setAllergyOptions(allergies);
       } catch (error) {
         console.error("Erreur lors du chargement des allergies :", error);
       }
     };
-  
+
     const fetchUser = async () => {
       try {
         const res = await fetch("/api/me", {
           method: "GET",
-          headers: authHeaders
+          headers: authHeaders,
         });
         if (!res.ok) {
           console.error("User fetch failed:", await res.text());
@@ -70,21 +77,20 @@ const AllergiesSelectionPage = () => {
         router.push("/login");
       }
     };
-  
+
     fetchAllergies();
     fetchUser();
   }, []);
-  
 
-  const toggleAllergy = (allergyName: string): void => {
+  const toggleAllergy = (allergyId: string): void => {
     setSelectedAllergies((prev) =>
-      prev.includes(allergyName) ? prev.filter((a) => a !== allergyName) : [...prev, allergyName]
+      prev.includes(allergyId) ? prev.filter((id) => id !== allergyId) : [...prev, allergyId]
     );
   };
 
   const addCustomAllergy = async () => {
     const trimmed = customAllergy.trim();
-    if (!trimmed || selectedAllergies.includes(trimmed)) return;
+    if (!trimmed) return;
 
     try {
       const res = await fetch("/api/allergy/create", {
@@ -98,20 +104,15 @@ const AllergiesSelectionPage = () => {
         throw new Error(data.error || "Erreur ajout allergie");
       }
 
-      setSelectedAllergies((prev) => [...prev, trimmed]);
-      if (!allergyOptions.includes(trimmed)) {
-        setAllergyOptions((prev) => [...prev, trimmed]);
-      }
-
+      // On récupère l'id du nouvel enregistrement
+      const newAllergy: Allergy = { id: data.id, label: trimmed };
+      setSelectedAllergies((prev) => [...prev, newAllergy.id]);
+      setAllergyOptions((prev) => [...prev, newAllergy]);
       setCustomAllergy("");
       setShowCustomInput(false);
     } catch (error) {
       console.error("Erreur ajout allergie :", error);
     }
-  };
-
-  const removeAllergy = (allergyToRemove: string): void => {
-    setSelectedAllergies((prev) => prev.filter((allergy) => allergy !== allergyToRemove));
   };
 
   const handleSubmit = async (): Promise<void> => {
@@ -138,20 +139,7 @@ const AllergiesSelectionPage = () => {
     }
   };
 
-  const handleSkip = () => router.push("/dashboard");
-
-  const getSeverityColor = (label: string): string => {
-    switch (label) {
-      case "Grave":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "Modérée":
-        return "bg-orange-100 text-orange-800 border-orange-200";
-      case "Légère":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  const handleSkip = () => router.push("/profil");
 
   return (
     <div className="min-h-screen bg-gradient-accent flex items-center justify-center p-4">
@@ -188,22 +176,18 @@ const AllergiesSelectionPage = () => {
                   </Badge>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {selectedAllergies.map((allergy, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 bg-accent-pink p-3 rounded-lg border border-primary/20"
-                    >
-                      <span className="font-medium text-primary flex-1">{allergy}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeAllergy(allergy)}
-                        className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+                  {selectedAllergies.map((id) => {
+                    const allergy = allergyOptions.find((a) => a.id === id);
+                    if (!allergy) return null;
+                    return (
+                      <div key={id} className="flex items-center gap-2 bg-accent-pink p-3 rounded-lg border border-primary/20">
+                        <span className="font-medium text-primary flex-1">{allergy.label}</span>
+                        <Button variant="ghost" size="sm" onClick={() => toggleAllergy(id)} className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600">
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -213,20 +197,18 @@ const AllergiesSelectionPage = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-foreground">Allergies connues</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allergyOptions.map((label) => {
-                  const isSelected = selectedAllergies.includes(label);
+                {allergyOptions.map((allergy) => {
+                  const isSelected = selectedAllergies.includes(allergy.id);
                   return (
                     <div
-                      key={label}
-                      onClick={() => toggleAllergy(label)}
+                      key={allergy.id}
+                      onClick={() => toggleAllergy(allergy.id)}
                       className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:scale-105 ${
-                        isSelected
-                          ? "border-primary bg-accent-pink shadow-primary"
-                          : "border-border bg-card hover:border-primary/50 hover:bg-accent-pink/50"
+                        isSelected ? "border-primary bg-accent-pink shadow-primary" : "border-border bg-card hover:border-primary/50 hover:bg-accent-pink/50"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-foreground">{label}</span>
+                        <span className="font-semibold text-foreground">{allergy.label}</span>
                         {isSelected && (
                           <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                             <Check className="w-4 h-4 text-white" />
@@ -244,14 +226,8 @@ const AllergiesSelectionPage = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold text-foreground">Allergie non listée ?</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCustomInput(!showCustomInput)}
-                  className="border-primary text-primary hover:bg-accent-pink"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Ajouter
+                <Button variant="outline" size="sm" onClick={() => setShowCustomInput(!showCustomInput)} className="border-primary text-primary hover:bg-accent-pink">
+                  <Plus className="w-4 h-4 mr-1" /> Ajouter
                 </Button>
               </div>
 
@@ -267,13 +243,7 @@ const AllergiesSelectionPage = () => {
                   <Button onClick={addCustomAllergy} className="bg-primary text-white">
                     <Plus className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowCustomInput(false);
-                      setCustomAllergy("");
-                    }}
-                  >
+                  <Button variant="outline" onClick={() => { setShowCustomInput(false); setCustomAllergy(""); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -285,25 +255,15 @@ const AllergiesSelectionPage = () => {
         <Alert className="mb-6 border-primary/20 bg-accent-pink">
           <AlertCircle className="h-4 w-4 text-primary" />
           <AlertDescription className="text-text-dark">
-            <strong>Important :</strong> Ces informations nous aident à personnaliser vos recettes. Vous pourrez
-            toujours modifier vos allergies dans votre profil.
+            <strong>Important :</strong> Ces informations nous aident à personnaliser vos recettes. Vous pourrez toujours modifier vos allergies dans votre profil.
           </AlertDescription>
         </Alert>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            variant="outline"
-            onClick={handleSkip}
-            disabled={isLoading}
-            className="px-8 py-3 text-base border-primary text-primary hover:bg-accent-pink"
-          >
+          <Button variant="outline" onClick={handleSkip} disabled={isLoading} className="px-8 py-3 text-base border-primary text-primary hover:bg-accent-pink">
             Passer cette étape
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="px-8 py-3 text-base bg-primary text-white hover:bg-primary-dark"
-          >
+          <Button onClick={handleSubmit} disabled={isLoading} className="px-8 py-3 text-base bg-primary text-white hover:bg-primary-dark">
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -311,8 +271,7 @@ const AllergiesSelectionPage = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                Continuer
-                <ArrowRight className="w-4 h-4" />
+                Continuer <ArrowRight className="w-4 h-4" />
               </div>
             )}
           </Button>

@@ -1,84 +1,102 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/navbar";
-
-interface Recipe {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  tags: string[];
-  ingredients: string[];
-  type: string;
-}
-
-const recipes: Recipe[] = [
-  {
-    id: 1,
-    title: "Spaghetti Carbonara",
-    description: "Une recette italienne crémeuse et savoureuse à base de pancetta et parmesan.",
-    image: "/images/carbonara.jpg",
-    tags: ["Italien", "Pâtes", "Rapide"],
-    ingredients: ["spaghetti", "pancetta", "parmesan", "œufs", "crème", "ail"],
-    type: "Plat principal"
-  },
-  {
-    id: 2,
-    title: "Tacos au Poulet",
-    description: "Des tacos croustillants garnis de poulet épicé, de salsa et d'avocat.",
-    image: "/images/tacos.jpg",
-    tags: ["Mexicain", "Street food"],
-    ingredients: ["tortilla", "poulet", "avocat", "tomate", "oignon", "cilantro", "lime"],
-    type: "Plat principal"
-  },
-  {
-    id: 3,
-    title: "Curry de Légumes",
-    description: "Un curry végétarien riche en saveurs, parfait pour un repas réconfortant.",
-    image: "/images/curry.jpg",
-    tags: ["Vegan", "Épicé", "Confort food"],
-    ingredients: ["courgette", "aubergine", "tomate", "lait de coco", "curry", "gingembre", "ail"],
-    type: "Plat principal"
-  },
-  {
-    id: 4,
-    title: "Salade César",
-    description: "La salade classique avec sa sauce crémeuse et ses croûtons croustillants.",
-    image: "/images/cesar.jpg",
-    tags: ["Salade", "Classique"],
-    ingredients: ["laitue", "parmesan", "croûtons", "anchois", "citron", "huile d'olive"],
-    type: "Entrée"
-  },
-  {
-    id: 5,
-    title: "Tiramisu",
-    description: "Le dessert italien par excellence, onctueux et parfumé au café.",
-    image: "/images/tiramisu.jpg",
-    tags: ["Italien", "Dessert", "Café"],
-    ingredients: ["mascarpone", "café", "biscuits", "cacao", "œufs", "sucre"],
-    type: "Dessert"
-  }
-];
+import { useAlert } from "@/components/AlertContext";
+import { useRouter } from "next/navigation";
+import Loader from "@/components/Loader";
+import { Ingredient, Recipe } from "@/types";
+import Image from "next/image";
 
 export default function RecipesPage() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const allTags = Array.from(new Set(recipes.flatMap(r => r.tags)));
   const allTypes = Array.from(new Set(recipes.map(r => r.type)));
 
+  const router = useRouter();
+  const { showAlert } = useAlert();
+
+
+  useEffect(() => {
+    if(hasError) {
+        setTimeout(() => {
+            router.push("/recipes");
+        }, 2000);
+        return;
+    }
+
+    const fetchIngredients = async (ids: string[]): Promise<Ingredient[]> => {
+        try {
+            const ingredientPromises = ids.map(ingredientId => 
+                fetch(`/api/ingredient/${ingredientId}/findById`).then(res => {
+                    if (!res.ok) throw new Error("Failed to fetch ingredient");
+                    return res.json();
+                })
+            );
+            
+            return await Promise.all(ingredientPromises);
+        } catch (err) {
+            console.error("Error retrieving ingredients:", err);
+            return [];
+        }
+    } 
+
+    const fetchRecipes = async () => {
+        try {
+            const res = await fetch(`/api/recipe/findPublished`);
+            
+            if (!res.ok) throw new Error("Les recettes n'ont pas pu être récupérées");
+            const recipeData = await res.json();
+
+            const enrichedRecipes = await Promise.all(
+                  recipeData.map(async (recipe: Recipe) => {
+                    
+                    const ingredients =
+                      (recipe.ingredientsId && recipe.ingredientsId.length > 0)
+                        ? await fetchIngredients(recipe.ingredientsId)
+                        : [];
+
+                    return {
+                      ...recipe,
+                      ingredients
+                    };
+                  })
+                );                
+                setRecipes(enrichedRecipes);
+
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            showAlert({
+                type: "error",
+                title: "Erreur",
+                description: errorMessage
+            })
+            setHasError(true);
+        } finally {
+          setIsLoading(false);
+        }
+    };
+
+    fetchRecipes();
+  }, [hasError, router, showAlert])
+
+  
   const filteredRecipes = useMemo(() => {
     let filtered = recipes;
-
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(recipe => {
         const titleMatch = recipe.title.toLowerCase().includes(query);
         const ingredientMatch = recipe.ingredients.some(ingredient => 
-          ingredient.toLowerCase().includes(query)
+          ingredient.name.toLowerCase().includes(query)
         );
         const tagMatch = recipe.tags.some(tag => 
           tag.toLowerCase().includes(query)
@@ -99,13 +117,15 @@ export default function RecipesPage() {
     }
 
     return filtered;
-  }, [searchQuery, activeTag, activeType]);
+  }, [searchQuery, activeTag, activeType, recipes]);
 
   const clearFilters = () => {
     setSearchQuery("");
     setActiveTag(null);
     setActiveType(null);
   };
+
+  if (isLoading) return <div className="text-center p-10"><Loader/></div>;
 
   return (
     <>
@@ -148,7 +168,7 @@ export default function RecipesPage() {
               <span>Filtres actifs:</span>
               {searchQuery && (
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  "{searchQuery}"
+                  &quot;{searchQuery}&quot;
                 </span>
               )}
               {activeTag && (
@@ -247,11 +267,20 @@ export default function RecipesPage() {
                   {recipe.type}
                 </div>
                 <div className="overflow-hidden rounded-lg mb-4">
-                  <img
-                    src={recipe.image}
-                    alt={recipe.title}
-                    className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                        {recipe.image && recipe.image.trim() ? (
+                          <Image
+                            src={recipe.image}
+                            alt={recipe.title}
+                            width={800}
+                            height={500}
+                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                            priority
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded-lg">
+                            <span className="text-gray-500">Pas d&apos;image</span>
+                          </div>
+                        )}
                 </div>
                 <h2 className="text-2xl font-semibold text-primary mb-2">
                   {recipe.title}
@@ -262,7 +291,7 @@ export default function RecipesPage() {
                 <div className="mb-3">
                   <p className="text-xs text-gray-500 mb-1">Ingrédients clés:</p>
                   <p className="text-sm text-gray-700">
-                    {recipe.ingredients.slice(0, 3).join(", ")}
+                    {recipe.ingredients.slice(0, 3).map(ing => ing.name).join(", ")}
                     {recipe.ingredients.length > 3 && "..."}
                   </p>
                 </div>

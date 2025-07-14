@@ -25,7 +25,6 @@ export default function RecipesPage() {
   const { showAlert } = useAlert();
 
   useEffect(() => {
-
     const token = getCookie("token");     
             
     if (!token) {
@@ -65,7 +64,6 @@ export default function RecipesPage() {
 
     fetchRecipes();
   }, [hasError, router, showAlert])
-
 
   const filteredRecipes = useMemo(() => {
     let filtered = recipes;
@@ -149,7 +147,6 @@ export default function RecipesPage() {
             />
           </div>
           
-          
           {(searchQuery || activeTags || activeType || activePublication) && (
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span>Filtres actifs:</span>
@@ -168,13 +165,11 @@ export default function RecipesPage() {
                   {activeType}
                 </span>
               )}
-
               {activePublication && (
                 <span className="bg-purple-100 text-orange-800 px-2 py-1 rounded">
                   {activePublication}
                 </span>
               )}
-
               <button
                 onClick={clearFilters}
                 className="text-red-600 hover:text-red-800 underline ml-2"
@@ -185,7 +180,6 @@ export default function RecipesPage() {
           )}
         </div>
 
-        
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-3">Type de plat</h3>
           <div className="flex flex-wrap gap-3">
@@ -233,6 +227,7 @@ export default function RecipesPage() {
             </button>
           ))}
         </div>
+        
         <div className="flex flex-wrap gap-3 mb-10">
             <span className="text-lg font-semibold text-gray-700 mr-2">Publication :</span>
             <button
@@ -255,7 +250,6 @@ export default function RecipesPage() {
             </button>
         </div>
 
-        
         {filteredRecipes.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -282,14 +276,20 @@ export default function RecipesPage() {
 
                 <div className="flex flex-col md:flex-row gap-4 items-center">
                     <div className="w-full md:w-1/3 overflow-hidden rounded-lg">
-                        <Image
-                            src={recipe.image}
-                            alt={recipe.title}
-                            width={800}
-                            height={500}
-                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
-                            priority
-                        />
+                        {recipe.image && recipe.image.trim() ? (
+                          <Image
+                              src={recipe.image}
+                              alt={recipe.title}
+                              width={800}
+                              height={500}
+                              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
+                              priority
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded-lg">
+                            <span className="text-gray-500">Pas d&apos;image</span>
+                          </div>
+                        )}
                     </div>
 
                     <div className="flex-1 text-left">
